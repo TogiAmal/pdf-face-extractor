@@ -5,8 +5,21 @@ import io
 import zipfile
 import os
 
-# --- APP CONFIGURATION ---
-st.set_page_config(page_title="PDF Face Extractor", layout="centered")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(page_title="PDF Face Extractor", page_icon="📸", layout="centered")
+
+# --- HIDE STREAMLIT BRANDING & MENU ---
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stDeployButton {display:none;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
+# --- APP TITLE ---
 st.title("📂 PDF Face & Photo Extractor")
 st.write("Upload a directory PDF to extract faces in exact reading order (Left -> Right).")
 
@@ -16,10 +29,11 @@ with st.sidebar:
     min_width = st.slider("Min Width (px)", 50, 500, 100)
     min_height = st.slider("Min Height (px)", 50, 500, 100)
     row_tolerance = st.slider("Row Alignment (px)", 0, 50, 10)
-    st.info("Adjust these if you are missing photos or getting too many logos.")
+    st.info("Adjust 'Row Alignment' if the order is slightly off.")
 
 # --- PROCESSING FUNCTION ---
 def extract_images_from_pdf(uploaded_file):
+    # Read the uploaded file into PyMuPDF
     doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
     extracted_images = []
     
@@ -40,6 +54,7 @@ def extract_images_from_pdf(uploaded_file):
         # 1. Gather Images & Positions
         for img in image_list:
             xref = img[0]
+            # Get bounding box (rect) to find position
             rects = page.get_image_rects(xref)
             if rects:
                 y = rects[0].y0
@@ -58,12 +73,17 @@ def extract_images_from_pdf(uploaded_file):
                 prev_img = current_row[-1]
                 
                 # Check alignment (Row Detection)
+                # If images are within 'row_tolerance' pixels vertically, they are on the same line.
                 if abs(img['y'] - prev_img['y']) < row_tolerance:
                     current_row.append(img)
                 else:
-                    current_row.sort(key=lambda k: k['x']) # Sort row Left-to-Right
+                    # Row finished: Sort this row by X (Left to Right)
+                    current_row.sort(key=lambda k: k['x'])
                     sorted_final.extend(current_row)
+                    # Start new row
                     current_row = [img]
+            
+            # Add the last row
             current_row.sort(key=lambda k: k['x'])
             sorted_final.extend(current_row)
 
@@ -73,22 +93,24 @@ def extract_images_from_pdf(uploaded_file):
             try:
                 pix = fitz.Pixmap(doc, xref)
                 
-                # Convert CMYK/Grayscale to RGB if needed
+                # Convert CMYK/Grayscale to RGB if needed to prevent color errors
                 if pix.n - pix.alpha < 3:
                     pix = fitz.Pixmap(fitz.csRGB, pix)
                 
-                # Check Size
+                # Check Size Filters
                 if pix.width >= min_width and pix.height >= min_height:
                     global_count += 1
                     
                     # Convert to PNG bytes
                     img_bytes = pix.tobytes("png")
+                    
+                    # Name files sequentially (001, 002) so they sort correctly in folders
                     filename = f"img_{global_count:03d}_page{page_index+1}.png"
                     extracted_images.append((filename, img_bytes))
                     
-                pix = None
+                pix = None # Free memory
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"Error on page {page_index}: {e}")
 
     return extracted_images
 
