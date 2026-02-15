@@ -8,13 +8,29 @@ import os
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="PDF Face Extractor", page_icon="📸", layout="centered")
 
-# --- HIDE STREAMLIT BRANDING & MENU ---
+# --- HIDE STREAMLIT BRANDING, MENU, & USER PROFILE ---
 hide_st_style = """
             <style>
+            /* Hides the main menu (three dots) */
             #MainMenu {visibility: hidden;}
+            
+            /* Hides the "Made with Streamlit" footer */
             footer {visibility: hidden;}
+            
+            /* Hides the header (color strip at top) */
             header {visibility: hidden;}
-            .stDeployButton {display:none;}
+            
+            /* Hides the Deploy button and User Profile Image */
+            [data-testid="stToolbar"] {
+                visibility: hidden !important;
+                display: none !important;
+            }
+            
+            /* Optional: Remove the gap left by the hidden header */
+            [data-testid="stHeader"] {
+                visibility: hidden !important;
+                display: none !important;
+            }
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
