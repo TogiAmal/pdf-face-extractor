@@ -15,10 +15,10 @@ hide_st_style = """
             #MainMenu {visibility: hidden;}
             
             /* Hides the "Made with Streamlit" footer */
-            footer {visibility: hidden;}
+            footer {visibility: hidden !important; display: none !important;}
             
             /* Hides the header (color strip at top) */
-            header {visibility: hidden;}
+            header {visibility: hidden !important; display: none !important;}
             
             /* Hides the Deploy button and User Profile Image */
             [data-testid="stToolbar"] {
@@ -26,10 +26,21 @@ hide_st_style = """
                 display: none !important;
             }
             
-            /* Optional: Remove the gap left by the hidden header */
+            /* Specific target for the footer container */
+            [data-testid="stFooter"] {
+                visibility: hidden !important;
+                display: none !important;
+            }
+            
+            /* Remove the gap left by the hidden header */
             [data-testid="stHeader"] {
                 visibility: hidden !important;
                 display: none !important;
+            }
+            
+            /* Adjust top padding so your title doesn't disappear */
+            .block-container {
+                padding-top: 2rem !important; 
             }
             </style>
             """
